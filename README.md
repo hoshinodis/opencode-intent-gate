@@ -40,7 +40,11 @@ Compaction requests and other runtime-generated messages are never gated. The ho
 
 ## Install
 
-Clone and symlink it into your global plugins directory:
+```sh
+opencode plugin add opencode-intent-gate
+```
+
+Or run from a local checkout:
 
 ```sh
 git clone https://github.com/hoshinodis/opencode-intent-gate ~/app/opencode-intent-gate

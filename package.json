@@ -4,12 +4,27 @@
   "description": "TypeSafe Jev-powered intent gate for OpenCode: makes the agent confirm intent before diving into underspecified requests.",
   "license": "MIT",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
-    "index.ts",
-    "src",
+    "dist",
     "README.md",
     "LICENSE"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hoshinodis/opencode-intent-gate.git"
+  },
+  "homepage": "https://github.com/hoshinodis/opencode-intent-gate#readme",
+  "bugs": {
+    "url": "https://github.com/hoshinodis/opencode-intent-gate/issues"
+  },
   "keywords": [
     "opencode",
     "opencode-plugin",
@@ -28,6 +43,8 @@
     "typescript": "^7.0.0"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepare": "npm run build",
     "typecheck": "tsc --noEmit"
   }
 }
