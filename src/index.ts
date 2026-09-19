@@ -37,6 +37,7 @@ type AiMessage = { id?: string; role?: string; content?: AiContentPart[] }
 
 type ContextHookEvent = {
   sessionID?: string
+  agent?: unknown
   messages?: AiMessage[]
   system: Array<{ type: "text"; text: string }>
 }
@@ -63,6 +64,27 @@ const DIMENSION_LABELS: Record<Dimension, string> = {
 
 const ACK_PATTERN =
   /^(ok(ay)?|yes|yep|no|nope|thanks?|thank you|go ahead|do it|はい|うん|了解(です)?|りょうかい|おk|ありがと(う)?|ありがとうございます|続けて|進めて|お願い(します)?|よろしく(お願いします)?)[。、.!！?？\s]*$/iu
+
+const COMPACTION_PROMPT_PATTERN =
+  /^(you must summarize the conversation above|you are a context summarization agent)/i
+
+const agentName = (agent: unknown): string => {
+  if (typeof agent === "string") return agent
+  if (agent && typeof agent === "object") {
+    const record = agent as Record<string, unknown>
+    for (const key of ["name", "id", "agent"]) {
+      const value = record[key]
+      if (typeof value === "string" && value) return value
+    }
+  }
+  return ""
+}
+
+const compactionSkip = (event: ContextHookEvent, text: string): string | undefined => {
+  if (agentName(event.agent).toLowerCase() === "compaction") return "compaction-agent"
+  if (COMPACTION_PROMPT_PATTERN.test(text)) return "compaction-prompt"
+  return undefined
+}
 
 const messageText = (message: AiMessage): string =>
   (message.content ?? [])
@@ -216,6 +238,16 @@ export default define({
         if (!latest || !enabled) return
         const { key, text } = latest
         if (text.length < minChars || text.startsWith("/") || ACK_PATTERN.test(text)) return
+        const skipReason = compactionSkip(event, text)
+        if (skipReason) {
+          log({
+            ts: new Date().toISOString(),
+            event: "skip",
+            reason: skipReason,
+            preview: text.slice(0, 120),
+          })
+          return
+        }
 
         if (!judged.has(key)) {
           const { decision, latencyMs, error } = await judge(text)
@@ -259,6 +291,6 @@ export default define({
       }
     })
 
-    log({ ts: new Date().toISOString(), event: "setup", enabled, keyAvailable, model, revision: 5 })
+    log({ ts: new Date().toISOString(), event: "setup", enabled, keyAvailable, model, revision: 6 })
   },
 })

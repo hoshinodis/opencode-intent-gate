@@ -36,6 +36,8 @@ The decision is made from calibrated probabilities, not vibes: Jev returns `noul
 
 > **Beta note:** this plugin judges from the `context` hook (which runs before every model dispatch) instead of the `prompt` hook, so it works across OpenCode V2 betas. Tested on `beta-19271`.
 
+Compaction requests are never gated: when the agent is `compaction` or the latest user message is the summarization prompt, the hook returns before judging. The skip is recorded in the log as `event: "skip"`.
+
 ## Install
 
 Clone and symlink it into your global plugins directory:
