@@ -66,7 +66,9 @@ const ACK_PATTERN =
   /^(ok(ay)?|yes|yep|no|nope|thanks?|thank you|go ahead|do it|はい|うん|了解(です)?|りょうかい|おk|ありがと(う)?|ありがとうございます|続けて|進めて|お願い(します)?|よろしく(お願いします)?)[。、.!！?？\s]*$/iu
 
 const COMPACTION_PROMPT_PATTERN =
-  /^(you must summarize the conversation above|you are a context summarization agent)/i
+  /^(you must summarize the conversation above|update the existing checkpoint in the conversation above|you are a context summarization agent)/i
+
+const SYNTHETIC_PROMPT_HINT = /summar|checkpoint|conversation above|history shown/i
 
 const agentName = (agent: unknown): string => {
   if (typeof agent === "string") return agent
@@ -80,9 +82,10 @@ const agentName = (agent: unknown): string => {
   return ""
 }
 
-const compactionSkip = (event: ContextHookEvent, text: string): string | undefined => {
+const compactionSkip = (event: ContextHookEvent, message: { id?: string; text: string }): string | undefined => {
   if (agentName(event.agent).toLowerCase() === "compaction") return "compaction-agent"
-  if (COMPACTION_PROMPT_PATTERN.test(text)) return "compaction-prompt"
+  if (COMPACTION_PROMPT_PATTERN.test(message.text)) return "compaction-prompt"
+  if (!message.id && SYNTHETIC_PROMPT_HINT.test(message.text)) return "synthetic-prompt"
   return undefined
 }
 
@@ -93,13 +96,13 @@ const messageText = (message: AiMessage): string =>
     .join("\n")
     .trim()
 
-const lastUserMessage = (messages: AiMessage[]): { key: string; text: string } | undefined => {
+const lastUserMessage = (messages: AiMessage[]): { key: string; text: string; id?: string } | undefined => {
   for (let index = messages.length - 1; index >= 0; index--) {
     const message = messages[index]
     if (message?.role !== "user") continue
     const text = messageText(message)
     if (!text) continue
-    return { key: message.id ?? `text:${text.slice(0, 120)}`, text }
+    return { key: message.id ?? `text:${text.slice(0, 120)}`, text, id: message.id }
   }
   return undefined
 }
@@ -238,7 +241,7 @@ export default define({
         if (!latest || !enabled) return
         const { key, text } = latest
         if (text.length < minChars || text.startsWith("/") || ACK_PATTERN.test(text)) return
-        const skipReason = compactionSkip(event, text)
+        const skipReason = compactionSkip(event, latest)
         if (skipReason) {
           log({
             ts: new Date().toISOString(),
@@ -291,6 +294,6 @@ export default define({
       }
     })
 
-    log({ ts: new Date().toISOString(), event: "setup", enabled, keyAvailable, model, revision: 6 })
+    log({ ts: new Date().toISOString(), event: "setup", enabled, keyAvailable, model, revision: 7 })
   },
 })
