@@ -31,10 +31,10 @@ The decision is made from calibrated probabilities, not vibes: Jev returns `noul
 
 ## Requirements
 
-- OpenCode V2 (tested on `opencode2` `0.0.0-beta-17963`)
+- OpenCode V2 beta (tested on `opencode2` `0.0.0-beta-19271`)
 - A TypeSafe API key: sign in at <https://console.typesafe.ai> and issue one (a trial credit is included)
 
-> **Beta note:** this plugin judges from the `context` hook (which runs before every model dispatch) instead of the `prompt` hook, so it also works on OpenCode V2 betas where the prompt hook is missing (e.g. `beta-17963`; `beta-19271` implements it). Tested on `beta-19271`.
+> **Beta note:** this plugin judges from the `context` hook (which runs before every model dispatch) instead of the `prompt` hook, so it works across OpenCode V2 betas. Tested on `beta-19271`.
 
 ## Install
 
