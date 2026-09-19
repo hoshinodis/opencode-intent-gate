@@ -1,0 +1,32 @@
+{
+  "name": "opencode-intent-gate",
+  "version": "0.1.0",
+  "description": "TypeSafe Jev-powered intent gate for OpenCode: makes the agent confirm intent before diving into underspecified requests.",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "typesafe",
+    "jev",
+    "llm",
+    "agent",
+    "guardrails"
+  ],
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.17.0"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.17.13",
+    "@types/node": "^26.0.0",
+    "typescript": "^7.0.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}
