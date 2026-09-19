@@ -70,6 +70,9 @@ const COMPACTION_PROMPT_PATTERN =
 
 const SYNTHETIC_PROMPT_HINT = /summar|checkpoint|conversation above|history shown/i
 
+const SYNTHETIC_MESSAGE_PATTERN =
+  /^(the previous response was interrupted|the server restarted while you were working|critical - maximum steps reached|the following (?:tool|shell command) was executed by the user|<system-reminder>|<subagent\b|<shell\b)/i
+
 const agentName = (agent: unknown): string => {
   if (typeof agent === "string") return agent
   if (agent && typeof agent === "object") {
@@ -82,9 +85,10 @@ const agentName = (agent: unknown): string => {
   return ""
 }
 
-const compactionSkip = (event: ContextHookEvent, message: { id?: string; text: string }): string | undefined => {
+const skipJudgment = (event: ContextHookEvent, message: { id?: string; text: string }): string | undefined => {
   if (agentName(event.agent).toLowerCase() === "compaction") return "compaction-agent"
   if (COMPACTION_PROMPT_PATTERN.test(message.text)) return "compaction-prompt"
+  if (SYNTHETIC_MESSAGE_PATTERN.test(message.text)) return "synthetic-message"
   if (!message.id && SYNTHETIC_PROMPT_HINT.test(message.text)) return "synthetic-prompt"
   return undefined
 }
@@ -241,7 +245,7 @@ export default define({
         if (!latest || !enabled) return
         const { key, text } = latest
         if (text.length < minChars || text.startsWith("/") || ACK_PATTERN.test(text)) return
-        const skipReason = compactionSkip(event, latest)
+        const skipReason = skipJudgment(event, latest)
         if (skipReason) {
           log({
             ts: new Date().toISOString(),
@@ -294,6 +298,6 @@ export default define({
       }
     })
 
-    log({ ts: new Date().toISOString(), event: "setup", enabled, keyAvailable, model, revision: 7 })
+    log({ ts: new Date().toISOString(), event: "setup", enabled, keyAvailable, model, revision: 8 })
   },
 })

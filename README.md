@@ -36,7 +36,7 @@ The decision is made from calibrated probabilities, not vibes: Jev returns `noul
 
 > **Beta note:** this plugin judges from the `context` hook (which runs before every model dispatch) instead of the `prompt` hook, so it works across OpenCode V2 betas. Tested on `beta-19271`.
 
-Compaction requests are never gated. The hook returns before judging when the agent is `compaction`, when the latest user message is a compaction prompt (`You MUST summarize the conversation above...` or `Update the existing checkpoint...`), or when it is an id-less synthetic prompt about summarizing. The skip is recorded in the log as `event: "skip"`.
+Compaction requests and other runtime-generated messages are never gated. The hook returns before judging when the agent is `compaction`, when the latest user message is a compaction prompt (`You MUST summarize the conversation above...` or `Update the existing checkpoint...`), when it is an id-less synthetic prompt about summarizing, or when it is a runtime notice (interruption/server-restart resume, max-steps, user-executed tool reports, plan-mode reminders, subagent reports). Skips are recorded in the log as `event: "skip"` with a `reason`.
 
 ## Install
 
