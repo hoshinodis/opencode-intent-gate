@@ -73,6 +73,8 @@ const SYNTHETIC_PROMPT_HINT = /summar|checkpoint|conversation above|history show
 const SYNTHETIC_MESSAGE_PATTERN =
   /^(the previous response was interrupted|the server restarted while you were working|critical - maximum steps reached|the following (?:tool|shell command) was executed by the user|<system-reminder>|<subagent\b|<shell\b)/i
 
+const CHECKPOINT_MESSAGE_PATTERN = /^\s*<conversation-checkpoint>/i
+
 const agentName = (agent: unknown): string => {
   if (typeof agent === "string") return agent
   if (agent && typeof agent === "object") {
@@ -89,6 +91,7 @@ const skipJudgment = (event: ContextHookEvent, message: { id?: string; text: str
   if (agentName(event.agent).toLowerCase() === "compaction") return "compaction-agent"
   if (COMPACTION_PROMPT_PATTERN.test(message.text)) return "compaction-prompt"
   if (SYNTHETIC_MESSAGE_PATTERN.test(message.text)) return "synthetic-message"
+  if (CHECKPOINT_MESSAGE_PATTERN.test(message.text)) return "checkpoint-message"
   if (!message.id && SYNTHETIC_PROMPT_HINT.test(message.text)) return "synthetic-prompt"
   return undefined
 }
@@ -298,6 +301,6 @@ export default define({
       }
     })
 
-    log({ ts: new Date().toISOString(), event: "setup", enabled, keyAvailable, model, revision: 8 })
+    log({ ts: new Date().toISOString(), event: "setup", enabled, keyAvailable, model, revision: 9 })
   },
 })
