@@ -12,6 +12,7 @@ type GateOptions = {
   dimensionThreshold?: number
   timeoutMs?: number
   minChars?: number
+  maxChars?: number
   apiKeyEnv?: string
   apiKeyFile?: string
   logFile?: string
@@ -103,6 +104,13 @@ const messageText = (message: AiMessage): string =>
     .join("\n")
     .trim()
 
+/** 長いメッセージ（添付の展開など）を head+tail に縮める。 */
+const clip = (text: string, max: number): string => {
+  if (text.length <= max) return text
+  const tail = Math.floor(max / 4)
+  return `${text.slice(0, max - tail)}\n…\n${text.slice(-tail)}`
+}
+
 const lastUserMessage = (messages: AiMessage[]): { key: string; text: string; id?: string } | undefined => {
   for (let index = messages.length - 1; index >= 0; index--) {
     const message = messages[index]
@@ -125,6 +133,7 @@ export default define({
     const dimensionThreshold = options.dimensionThreshold ?? 0.75
     const timeoutMs = options.timeoutMs ?? 2500
     const minChars = options.minChars ?? 2
+    const maxChars = options.maxChars ?? 4000
     const apiKeyEnv = options.apiKeyEnv ?? "TYPESAFE_API_KEY"
     const apiKeyFile = options.apiKeyFile ?? join(homedir(), ".config/opencode/typesafe/api_key")
     const logFile = options.logFile ?? join(homedir(), ".config/opencode/intent-gate/decisions.jsonl")
@@ -179,7 +188,7 @@ export default define({
           headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
           body: JSON.stringify({
             state: {
-              message: text,
+              message: clip(text, maxChars),
               project: ctx.location?.project?.canonical ?? ctx.location?.directory ?? "unknown",
               note: "The message may be written in Japanese. Judge its meaning, not its language.",
             },
@@ -301,6 +310,6 @@ export default define({
       }
     })
 
-    log({ ts: new Date().toISOString(), event: "setup", enabled, keyAvailable, model, revision: 9 })
+    log({ ts: new Date().toISOString(), event: "setup", enabled, keyAvailable, model, revision: 10 })
   },
 })

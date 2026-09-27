@@ -71,6 +71,7 @@ Options can be passed where the plugin is registered; defaults shown below.
 | `dimensionThreshold` | `0.75` | any ambiguity dimension at or above this gates |
 | `timeoutMs` | `2500` | request timeout; on timeout the gate is skipped (fail-open) |
 | `minChars` | `2` | skip messages shorter than this |
+| `maxChars` | `4000` | clip the text sent to Jev to this many characters (head + tail), so attached-file expansions cannot blow past the request limit |
 | `apiKeyEnv` / `apiKeyFile` | `TYPESAFE_API_KEY` / `~/.config/opencode/typesafe/api_key` | key lookup order |
 | `logFile` | `~/.config/opencode/intent-gate/decisions.jsonl` | JSONL decision log |
 
