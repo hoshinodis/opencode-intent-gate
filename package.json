@@ -1,6 +1,6 @@
 {
   "name": "opencode-intent-gate",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "TypeSafe Jev-powered intent gate for OpenCode: makes the agent confirm intent before diving into underspecified requests.",
   "license": "MIT",
   "type": "module",
