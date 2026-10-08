@@ -3,10 +3,11 @@ import { appendFile, mkdir, readFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { dirname, join } from "node:path"
 
-const TYPESAFE_URL = "https://api.typesafe.ai/v1/systemone"
+const DEFAULT_URL = "https://api.typesafe.ai/v1/systemone"
 
 type GateOptions = {
   enabled?: boolean
+  baseUrl?: string
   model?: string
   isWorkThreshold?: number
   dimensionThreshold?: number
@@ -128,7 +129,8 @@ export default define({
     const ctx = rawCtx as Ctx
     const options = ctx.options as GateOptions
     const enabled = options.enabled !== false && process.env.TYPESAFE_INTENT_GATE !== "off"
-    const model = options.model ?? "jev-latest"
+    const baseUrl = options.baseUrl ?? process.env.TYPESAFE_BASE_URL?.trim() ?? DEFAULT_URL
+    const model = options.model ?? process.env.TYPESAFE_DEFAULT_MODEL?.trim() ?? "jev-latest"
     const isWorkThreshold = options.isWorkThreshold ?? 0.5
     const dimensionThreshold = options.dimensionThreshold ?? 0.75
     const timeoutMs = options.timeoutMs ?? 2500
@@ -148,15 +150,17 @@ export default define({
     }
 
     let apiKey: string | undefined
+    let keyLoaded = false
     let warnedNoKey = false
     let consecutiveFailures = 0
     let disabledUntil = 0
 
+    const isRemote = baseUrl === DEFAULT_URL
     await mkdir(dirname(logFile), { recursive: true }).catch(() => {})
     const configuredKey = process.env[apiKeyEnv]?.trim()
     const fileKey = (await readFile(apiKeyFile, "utf8").catch(() => "")).trim()
     const keyAvailable = Boolean(configuredKey || fileKey)
-    if (enabled && !keyAvailable) {
+    if (enabled && isRemote && !keyAvailable) {
       console.warn(
         `[intent-gate] ${apiKeyEnv} is not set and ${apiKeyFile} is missing or empty; gate stays inactive`,
       )
@@ -166,26 +170,30 @@ export default define({
       void appendFile(logFile, JSON.stringify(entry) + "\n").catch(() => {})
     }
 
-    const resolveKey = async (): Promise<string | undefined> => {
-      if (apiKey) return apiKey
-      apiKey = process.env[apiKeyEnv]?.trim() || (await readFile(apiKeyFile, "utf8").catch(() => "")).trim() || undefined
-      if (!apiKey && !warnedNoKey) {
-        warnedNoKey = true
-        console.warn(`[intent-gate] no API key (${apiKeyEnv} or ${apiKeyFile}); gate disabled`)
+    const resolveKey = async (): Promise<string> => {
+      if (!keyLoaded) {
+        keyLoaded = true
+        apiKey = process.env[apiKeyEnv]?.trim() || (await readFile(apiKeyFile, "utf8").catch(() => "")).trim() || ""
+        if (!apiKey && isRemote && !warnedNoKey) {
+          warnedNoKey = true
+          console.warn(`[intent-gate] no API key (${apiKeyEnv} or ${apiKeyFile}); gate disabled`)
+        }
       }
-      return apiKey
+      return apiKey ?? ""
     }
 
     const judge = async (text: string) => {
       const started = Date.now()
       if (Date.now() < disabledUntil) return { latencyMs: 0, error: "circuit-open" }
       const key = await resolveKey()
-      if (!key) return { latencyMs: 0, error: "no-api-key" }
+      if (isRemote && !key) return { latencyMs: 0, error: "no-api-key" }
 
       try {
-        const response = await fetch(TYPESAFE_URL, {
+        const headers: Record<string, string> = { "Content-Type": "application/json" }
+        if (key) headers.Authorization = `Bearer ${key}`
+        const response = await fetch(baseUrl, {
           method: "POST",
-          headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({
             state: {
               message: clip(text, maxChars),
@@ -310,6 +318,6 @@ export default define({
       }
     })
 
-    log({ ts: new Date().toISOString(), event: "setup", enabled, keyAvailable, model, revision: 10 })
+    log({ ts: new Date().toISOString(), event: "setup", enabled, baseUrl, keyAvailable, model, revision: 11 })
   },
 })

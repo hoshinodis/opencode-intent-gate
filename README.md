@@ -59,6 +59,17 @@ export TYPESAFE_API_KEY=...
 
 or drop the key into `~/.config/opencode/typesafe/api_key`.
 
+### Local decision models
+
+Any endpoint that speaks the Jev / System One API works, including [Ollama's decision models](https://docs.ollama.com/capabilities/decision) (`tev1`, `clef-flash`, `laya`, ...). Point the plugin at the endpoint and pick the model; no key is sent when there is none, and no key is required for a custom endpoint.
+
+```sh
+export TYPESAFE_BASE_URL=http://192.168.0.91:11434/v1/systemone
+export TYPESAFE_DEFAULT_MODEL=tev1:0.8b
+```
+
+The URL is used as-is — include the path. `TYPESAFE_BASE_URL` / `TYPESAFE_DEFAULT_MODEL` mirror the TypeSafe SDK's variables, and the plugin options `baseUrl` / `model` override them. On a custom endpoint the gate skips the API-key checks, so it runs with no key configured.
+
 ## Options
 
 Options can be passed where the plugin is registered; defaults shown below.
@@ -66,7 +77,8 @@ Options can be passed where the plugin is registered; defaults shown below.
 | option | default | meaning |
 |---|---|---|
 | `enabled` | `true` | also disabled with `TYPESAFE_INTENT_GATE=off` |
-| `model` | `jev-latest` | pin e.g. `jev-1.13.0` for reproducibility |
+| `baseUrl` | `TYPESAFE_BASE_URL` / TypeSafe's endpoint | full endpoint URL, e.g. `http://host:11434/v1/systemone` |
+| `model` | `TYPESAFE_DEFAULT_MODEL` / `jev-latest` | pin e.g. `jev-1.13.0` for reproducibility |
 | `isWorkThreshold` | `0.5` | minimum `is_work_request` score to consider gating |
 | `dimensionThreshold` | `0.75` | any ambiguity dimension at or above this gates |
 | `timeoutMs` | `2500` | request timeout; on timeout the gate is skipped (fail-open) |
